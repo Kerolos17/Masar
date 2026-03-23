@@ -1,12 +1,35 @@
 import { Task } from '../types';
 import { todayStr } from './utils';
 
-const timerMap = new Map<string, { 
-  exactId: number; 
-  earlyId: number; 
-  reminder5mId: number;
-  fingerprint: string;
-}>();
+// Store notified events to avoid duplicate notifications
+const NOTIFIED_KEY = 'massar_notified_events';
+
+function getNotifiedEvents(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function markAsNotified(eventId: string) {
+  const events = getNotifiedEvents();
+  events[eventId] = Date.now();
+  
+  // Cleanup old events (older than 24 hours)
+  const now = Date.now();
+  for (const key in events) {
+    if (now - events[key] > 24 * 60 * 60 * 1000) {
+      delete events[key];
+    }
+  }
+  
+  localStorage.setItem(NOTIFIED_KEY, JSON.stringify(events));
+}
+
+function hasBeenNotified(eventId: string): boolean {
+  return !!getNotifiedEvents()[eventId];
+}
 
 export function getStatus(): 'granted' | 'denied' | 'default' | 'unsupported' {
   if (!('Notification' in window)) return 'unsupported';
@@ -30,7 +53,6 @@ async function showNotification(title: string, options: NotificationOptions) {
         return;
       }
     }
-    // Fallback to standard Notification
     new Notification(title, options);
   } catch (e) {
     console.error('Notification error:', e);
@@ -42,107 +64,166 @@ async function showNotification(title: string, options: NotificationOptions) {
   }
 }
 
-function getTaskFingerprint(task: Task): string {
-  return `${task.date}|${task.time}|${task.done}|${task.reminder5m}|${task.title}`;
+let activeTasks: Task[] = [];
+let checkInterval: number | null = null;
+const exactTimers = new Map<string, number[]>();
+
+function clearExactTimers() {
+  exactTimers.forEach(timers => timers.forEach(t => window.clearTimeout(t)));
+  exactTimers.clear();
 }
 
-export function scheduleTask(task: Task) {
-  if (getStatus() !== 'granted' || !task.time || task.done) {
-    cancelTask(task.id);
-    return;
-  }
-
-  const fingerprint = getTaskFingerprint(task);
-  const existing = timerMap.get(task.id);
-  
-  // If already scheduled with same fingerprint, do nothing
-  if (existing && existing.fingerprint === fingerprint) {
-    return;
-  }
-
-  const [hours, minutes] = task.time.split(':').map(Number);
-  const taskDate = new Date(task.date);
-  taskDate.setHours(hours, minutes, 0, 0);
+function checkNotifications() {
+  if (getStatus() !== 'granted') return;
 
   const now = new Date();
-  const timeUntilTask = taskDate.getTime() - now.getTime();
-  const timeUntilEarly = timeUntilTask - 10 * 60 * 1000;
-  const timeUntil5m = timeUntilTask - 5 * 60 * 1000;
+  const today = todayStr();
 
-  cancelTask(task.id);
+  activeTasks.forEach(task => {
+    if (task.done || !task.time || task.date !== today) return;
 
-  const ids = { exactId: -1, earlyId: -1, reminder5mId: -1, fingerprint };
+    const [hours, minutes] = task.time.split(':').map(Number);
+    const taskDate = new Date(task.date);
+    taskDate.setHours(hours, minutes, 0, 0);
+    
+    const timeUntilTask = taskDate.getTime() - now.getTime();
+    
+    // Check exact time (within last 2 minutes to catch missed ones)
+    if (timeUntilTask <= 0 && timeUntilTask > -2 * 60 * 1000) {
+      const eventId = `${task.id}-exact`;
+      if (!hasBeenNotified(eventId)) {
+        showNotification(`⏰ ${task.title}`, {
+          body: 'حان وقت المهمة الآن',
+          icon: '/favicon.ico',
+          vibrate: [200, 100, 200]
+        } as any);
+        markAsNotified(eventId);
+      }
+    }
 
-  if (timeUntilTask > 0) {
-    ids.exactId = window.setTimeout(() => {
-      showNotification(`⏰ ${task.title}`, {
-        body: 'حان وقت المهمة الآن',
-        icon: '/favicon.ico',
-        vibrate: [200, 100, 200]
-      } as any);
-    }, timeUntilTask);
-  }
+    // Check 10 mins early
+    const timeUntilEarly = timeUntilTask - 10 * 60 * 1000;
+    if (timeUntilEarly <= 0 && timeUntilEarly > -2 * 60 * 1000) {
+      const eventId = `${task.id}-early-10m`;
+      if (!hasBeenNotified(eventId)) {
+        showNotification(`⚠️ بعد 10 دقائق: ${task.title}`, {
+          body: 'استعد للمهمة القادمة',
+          icon: '/favicon.ico',
+          vibrate: [100, 50, 100]
+        } as any);
+        markAsNotified(eventId);
+      }
+    }
 
-  if (timeUntilEarly > 0) {
-    ids.earlyId = window.setTimeout(() => {
-      showNotification(`⚠️ بعد 10 دقائق: ${task.title}`, {
-        body: 'استعد للمهمة القادمة',
-        icon: '/favicon.ico',
-        vibrate: [100, 50, 100]
-      } as any);
-    }, timeUntilEarly);
-  }
+    // Check 5 mins early
+    if (task.reminder5m) {
+      const timeUntil5m = timeUntilTask - 5 * 60 * 1000;
+      if (timeUntil5m <= 0 && timeUntil5m > -2 * 60 * 1000) {
+        const eventId = `${task.id}-early-5m`;
+        if (!hasBeenNotified(eventId)) {
+          showNotification(`⚠️ بعد 5 دقائق: ${task.title}`, {
+            body: 'المهمة ستبدأ قريباً',
+            icon: '/favicon.ico',
+            vibrate: [100, 50, 100]
+          } as any);
+          markAsNotified(eventId);
+        }
+      }
+    }
 
-  if (task.reminder5m && timeUntil5m > 0) {
-    ids.reminder5mId = window.setTimeout(() => {
-      showNotification(`⚠️ بعد 5 دقائق: ${task.title}`, {
-        body: 'المهمة ستبدأ قريباً',
-        icon: '/favicon.ico',
-        vibrate: [100, 50, 100]
-      } as any);
-    }, timeUntil5m);
-  }
-
-  timerMap.set(task.id, ids);
+    // Check custom reminder
+    if (task.customReminder) {
+      const timeUntilCustom = timeUntilTask - task.customReminder * 60 * 1000;
+      if (timeUntilCustom <= 0 && timeUntilCustom > -2 * 60 * 1000) {
+        const eventId = `${task.id}-custom-${task.customReminder}m`;
+        if (!hasBeenNotified(eventId)) {
+          showNotification(`⚠️ بعد ${task.customReminder} دقيقة: ${task.title}`, {
+            body: 'المهمة ستبدأ قريباً',
+            icon: '/favicon.ico',
+            vibrate: [100, 50, 100]
+          } as any);
+          markAsNotified(eventId);
+        }
+      }
+    }
+  });
 }
 
-export function cancelTask(taskId: string) {
-  const ids = timerMap.get(taskId);
-  if (ids) {
-    clearTimeout(ids.exactId);
-    clearTimeout(ids.earlyId);
-    clearTimeout(ids.reminder5mId);
-    timerMap.delete(taskId);
-  }
+function setupExactTimers() {
+  clearExactTimers();
+  if (getStatus() !== 'granted') return;
+
+  const now = new Date();
+  const today = todayStr();
+
+  activeTasks.forEach(task => {
+    if (task.done || !task.time || task.date !== today) return;
+
+    const [hours, minutes] = task.time.split(':').map(Number);
+    const taskDate = new Date(task.date);
+    taskDate.setHours(hours, minutes, 0, 0);
+    
+    const timeUntilTask = taskDate.getTime() - now.getTime();
+    const timers: number[] = [];
+
+    if (timeUntilTask > 0) {
+      timers.push(window.setTimeout(() => checkNotifications(), timeUntilTask));
+    }
+
+    const timeUntilEarly = timeUntilTask - 10 * 60 * 1000;
+    if (timeUntilEarly > 0) {
+      timers.push(window.setTimeout(() => checkNotifications(), timeUntilEarly));
+    }
+
+    if (task.reminder5m) {
+      const timeUntil5m = timeUntilTask - 5 * 60 * 1000;
+      if (timeUntil5m > 0) {
+        timers.push(window.setTimeout(() => checkNotifications(), timeUntil5m));
+      }
+    }
+
+    if (task.customReminder) {
+      const timeUntilCustom = timeUntilTask - task.customReminder * 60 * 1000;
+      if (timeUntilCustom > 0) {
+        timers.push(window.setTimeout(() => checkNotifications(), timeUntilCustom));
+      }
+    }
+
+    if (timers.length > 0) {
+      exactTimers.set(task.id, timers);
+    }
+  });
 }
 
 export function rescheduleAllToday(tasks: Task[], enabled: boolean) {
+  if (checkInterval) {
+    window.clearInterval(checkInterval);
+    checkInterval = null;
+  }
+  clearExactTimers();
+
   if (!enabled || getStatus() !== 'granted') {
-    // Clear everything if disabled
-    for (const taskId of Array.from(timerMap.keys())) {
-      cancelTask(taskId);
-    }
+    activeTasks = [];
     return;
   }
 
-  const today = todayStr();
-  const newTaskIds = new Set(tasks.map(t => t.id));
+  activeTasks = tasks;
+  
+  // Check immediately
+  checkNotifications();
+  
+  // Setup exact timers for foreground precision
+  setupExactTimers();
+  
+  // Check every 30 seconds as fallback for background/suspended state
+  checkInterval = window.setInterval(checkNotifications, 30000);
+}
 
-  // 1. Cancel tasks that were deleted from the store
-  for (const taskId of Array.from(timerMap.keys())) {
-    if (!newTaskIds.has(taskId)) {
-      cancelTask(taskId);
-    }
-  }
-
-  // 2. Schedule or update tasks
-  tasks.forEach(task => {
-    const isToday = task.date === today;
-    if (isToday) {
-      scheduleTask(task);
-    } else {
-      // If it's not today but was scheduled, cancel it
-      cancelTask(task.id);
+// Check for missed notifications when app comes to foreground
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkNotifications();
     }
   });
 }

@@ -39,7 +39,8 @@ ${tasksStr || 'لا توجد مهام مجدولة لليوم'}
       "date": "YYYY-MM-DD",
       "time": "HH:MM",
       "desc": "...",
-      "priority": "high|medium|low"
+      "priority": "high|medium|low",
+      "customReminder": 15
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, CheckCircle2, Circle, Clock, Trash2, Edit2, AlertCircle, X } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Clock, Trash2, Edit2, AlertCircle, X, Bell } from 'lucide-react';
 import { useMassarStore } from '../lib/store';
 import { cn, getGreeting, todayStr, uid } from '../lib/utils';
 import { Task } from '../types';
@@ -270,6 +270,21 @@ export default function Today() {
                   </span>
                 </div>
 
+                {(viewingTask.reminder5m || viewingTask.customReminder) && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-teal/10 text-teal flex items-center justify-center shrink-0">
+                      <Bell size={16} />
+                    </div>
+                    <span className="text-muted">التنبيهات:</span>
+                    <span className="font-bold">
+                      {[
+                        viewingTask.reminder5m ? 'قبل 5 دقائق' : null,
+                        viewingTask.customReminder ? `قبل ${viewingTask.customReminder} دقيقة` : null
+                      ].filter(Boolean).join('، ')}
+                    </span>
+                  </div>
+                )}
+
                 {viewingTask.source !== 'manual' && (
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-8 h-8 rounded-full bg-surface2 text-muted flex items-center justify-center shrink-0">
@@ -321,6 +336,7 @@ function AddTaskForm({ onClose, taskToEdit }: { onClose: () => void, taskToEdit?
   const [time, setTime] = useState(taskToEdit?.time || '');
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>(taskToEdit?.priority || 'medium');
   const [reminder5m, setReminder5m] = useState(taskToEdit?.reminder5m || false);
+  const [customReminder, setCustomReminder] = useState<number | ''>(taskToEdit?.customReminder || '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -332,7 +348,8 @@ function AddTaskForm({ onClose, taskToEdit }: { onClose: () => void, taskToEdit?
         description: desc,
         time: time || null,
         priority,
-        reminder5m
+        reminder5m,
+        customReminder: customReminder === '' ? null : Number(customReminder)
       };
       
       updateTask(taskToEdit.id, updates);
@@ -356,6 +373,7 @@ function AddTaskForm({ onClose, taskToEdit }: { onClose: () => void, taskToEdit?
         priority,
         done: false,
         reminder5m,
+        customReminder: customReminder === '' ? null : Number(customReminder),
         source: 'manual',
         planDay: null,
         createdAt: new Date().toISOString()
@@ -430,6 +448,18 @@ function AddTaskForm({ onClose, taskToEdit }: { onClose: () => void, taskToEdit?
           className="w-5 h-5 rounded border-border text-teal focus:ring-teal bg-surface"
         />
         <label htmlFor="reminder5m" className="text-sm font-medium cursor-pointer">تنبيه قبل 5 دقائق</label>
+      </div>
+
+      <div className="bg-surface2/50 p-3 rounded-xl border border-border">
+        <label className="block text-xs text-muted mb-2">تنبيه مخصص (بالدقائق قبل المهمة)</label>
+        <input
+          type="number"
+          min="1"
+          value={customReminder}
+          onChange={(e) => setCustomReminder(e.target.value ? Number(e.target.value) : '')}
+          className="w-full bg-surface border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-teal text-sm"
+          placeholder="مثال: 15"
+        />
       </div>
 
       <div className="flex gap-3 pt-4">

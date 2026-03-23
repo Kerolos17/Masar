@@ -23,6 +23,7 @@ export interface Task {
   priority: 'high' | 'medium' | 'low';
   done: boolean;
   reminder5m: boolean;
+  customReminder?: number | null;
   source: 'manual' | 'ai' | 'plan90';
   planDay: number | null;
   createdAt: string;
@@ -51,5 +52,5 @@ export interface ChatMessage {
 }
 
 export type AIAction =
-  | { action: 'add_tasks'; tasks: Partial<Task>[] }
+  | { action: 'add_tasks'; tasks: (Partial<Task> & { customReminder?: number })[] }
   | { action: 'plan90'; goal: string; startDate: string; days: { day: number; title: string }[] };

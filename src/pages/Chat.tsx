@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, AlertCircle, CheckCircle2, Target, Calendar, Clock, GripVertical, Edit2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, AlertCircle, CheckCircle2, Target, Calendar, Clock, GripVertical, Edit2, Bell } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useMassarStore } from '../lib/store';
 import { cn, uid, todayStr } from '../lib/utils';
@@ -77,7 +77,8 @@ export default function Chat() {
         title: editDraft.title, 
         date: editDraft.date, 
         time: editDraft.time, 
-        priority: editDraft.priority 
+        priority: editDraft.priority,
+        customReminder: editDraft.customReminder === '' ? null : Number(editDraft.customReminder)
       });
     }
 
@@ -182,6 +183,7 @@ export default function Chat() {
               priority: t.priority || 'medium',
               done: false,
               reminder5m: false,
+              customReminder: t.customReminder || null,
               source: 'ai',
               planDay: null,
               createdAt: new Date().toISOString()
@@ -201,10 +203,11 @@ export default function Chat() {
           actionSummary = `✅ تمت إضافة ${addedTasks.length} مهام`;
         } else if (action.action === 'plan90') {
           const newPlan = {
-            id: uid(),
+            id: Date.now(),
             goal: action.goal,
             startDate: action.startDate,
-            days: action.days.map((d: any) => ({ id: uid(), plan90Id: 'temp', dayNumber: d.day, title: d.title, done: false }))
+            createdAt: new Date().toISOString(),
+            days: action.days.map((d: any, idx: number) => ({ id: Date.now() + idx, planId: Date.now(), dayNumber: d.day, title: d.title, done: false }))
           };
           setPlan90(newPlan);
           try {
@@ -409,6 +412,14 @@ export default function Chat() {
                                       <option value="medium">أولوية متوسطة</option>
                                       <option value="low">أولوية منخفضة</option>
                                     </select>
+                                    <input 
+                                      type="number" 
+                                      min="1"
+                                      placeholder="تنبيه (دقائق)"
+                                      value={editDraft?.customReminder || ''} 
+                                      onChange={e => setEditDraft({ ...editDraft, customReminder: e.target.value })}
+                                      className="bg-surface border border-border rounded px-2 py-1 text-xs focus:border-teal outline-none w-24"
+                                    />
                                   </div>
                                   <div className="flex justify-end gap-2 mt-1">
                                     <button onClick={() => setEditingTaskKey(null)} className="text-xs px-3 py-1.5 rounded-lg bg-surface border border-border hover:bg-surface2 transition-colors">إلغاء</button>
@@ -439,6 +450,12 @@ export default function Chat() {
                                       matchedTask.priority === 'medium' ? "bg-gold/10 text-gold" : "bg-green/10 text-green"
                                     )}>
                                       {matchedTask.priority === 'high' ? 'أولوية عالية' : matchedTask.priority === 'medium' ? 'أولوية متوسطة' : 'أولوية منخفضة'}
+                                    </span>
+                                  )}
+                                  {(matchedTask.customReminder || matchedTask.reminder5m) && (
+                                    <span className="flex items-center gap-1 text-teal bg-teal/10 px-2 py-0.5 rounded-md text-[10px] font-medium">
+                                      <Bell size={10} />
+                                      {matchedTask.customReminder ? `قبل ${matchedTask.customReminder}د` : 'قبل 5د'}
                                     </span>
                                   )}
                                   <button 

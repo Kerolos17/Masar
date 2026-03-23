@@ -32,6 +32,7 @@ model Task {
   priority    String   @default("medium")  // high|medium|low
   done        Boolean  @default(false)
   reminder5m  Boolean  @default(false)
+  customReminder Int?
   source      String   @default("manual")  // manual|ai|plan90
   planDay     Int?
   createdAt   DateTime @default(now())

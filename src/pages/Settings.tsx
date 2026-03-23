@@ -21,7 +21,7 @@ export default function SettingsPage() {
 
   const handleSaveUser = async () => {
     setIsSaving(true);
-    const updatedUser = { ...user, name, role, goal } as User;
+    const updatedUser = { ...user, name, role, goal } as any;
     setUser(updatedUser);
     try {
       await fetch('/api/user', {
