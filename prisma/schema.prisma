@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./massar.db"
+}
+
+model User {
+  id        Int      @id @default(1)
+  name      String
+  role      String?
+  goal      String?
+  createdAt DateTime @default(now())
+}
+
+model ScheduleBlock {
+  id       Int     @id @default(autoincrement())
+  dayKey   String  // sat|sun|mon|tue|wed|thu|fri
+  fromTime String  // HH:MM
+  toTime   String  // HH:MM
+  label    String?
+}
+
+model Task {
+  id          String   @id
+  title       String
+  description String?
+  date        String   // YYYY-MM-DD
+  time        String?  // HH:MM
+  priority    String   @default("medium")  // high|medium|low
+  done        Boolean  @default(false)
+  reminder5m  Boolean  @default(false)
+  source      String   @default("manual")  // manual|ai|plan90
+  planDay     Int?
+  createdAt   DateTime @default(now())
+}
+
+model Plan90 {
+  id        Int         @id @default(autoincrement())
+  goal      String
+  startDate String
+  createdAt DateTime    @default(now())
+  days      Plan90Day[]
+}
+
+model Plan90Day {
+  id        Int    @id @default(autoincrement())
+  planId    Int
+  plan      Plan90 @relation(fields:[planId], references:[id])
+  dayNumber Int
+  title     String
+}
+
+model ChatMessage {
+  id            String   @id
+  role          String   // user|model
+  content       String
+  actionSummary String?
+  createdAt     DateTime @default(now())
+}

@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --font-arabic: "Tajawal", sans-serif;
+
+  --color-bg: #0f1923;
+  --color-surface: #162130;
+  --color-surface2: #1c2d3f;
+  --color-border: #2a4258;
+  --color-txt: #e2eff8;
+  --color-muted: #506a80;
+  --color-teal: #2dd4bf;
+  --color-coral: #fb7f6a;
+  --color-gold: #f9c74f;
+  --color-green: #56d98a;
+  --color-red: #f87171;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-txt font-arabic antialiased selection:bg-teal/30;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}

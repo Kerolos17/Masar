@@ -1,0 +1,7 @@
+{
+  "name": "مسار — Massar",
+  "description": "مساعد تخطيط ذكي وشخصي مدعوم بالذكاء الاصطناعي لتحويل الأهداف إلى جداول يومية واقعية.",
+  "requestFramePermissions": [
+    "notifications"
+  ]
+}
