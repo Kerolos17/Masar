@@ -66,6 +66,11 @@ export const useMassarStore = create<MassarStore>()(
     {
       name: 'massar-config',
       partialize: (state) => ({
+        user: state.user,
+        schedule: state.schedule,
+        tasks: state.tasks,
+        plan90: state.plan90,
+        messages: state.messages,
         geminiKey: state.geminiKey,
         notifEnabled: state.notifEnabled,
       }),

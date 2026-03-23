@@ -32,16 +32,24 @@ export default function Today() {
   const toggleTask = async (task: Task) => {
     const updated = { ...task, done: !task.done };
     updateTask(task.id, { done: !task.done });
-    await fetch(`/api/tasks/${task.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ done: !task.done })
-    });
+    try {
+      await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done: !task.done })
+      });
+    } catch (e) {
+      console.error("Failed to sync task toggle", e);
+    }
   };
 
   const deleteTask = async (id: string) => {
     removeTask(id);
-    await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    try {
+      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      console.error("Failed to sync task deletion", e);
+    }
   };
 
   return (
@@ -329,11 +337,15 @@ function AddTaskForm({ onClose, taskToEdit }: { onClose: () => void, taskToEdit?
       
       updateTask(taskToEdit.id, updates);
       
-      await fetch(`/api/tasks/${taskToEdit.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
+      try {
+        await fetch(`/api/tasks/${taskToEdit.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+      } catch (e) {
+        console.error("Failed to sync task update", e);
+      }
     } else {
       const newTask: Task = {
         id: uid(),
@@ -349,13 +361,17 @@ function AddTaskForm({ onClose, taskToEdit }: { onClose: () => void, taskToEdit?
         createdAt: new Date().toISOString()
       };
 
-      const saved = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTask)
-      }).then(r => r.json());
+      addTask(newTask);
 
-      addTask(saved);
+      try {
+        await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTask)
+        });
+      } catch (e) {
+        console.error("Failed to sync new task", e);
+      }
     }
     
     onClose();

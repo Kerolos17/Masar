@@ -38,9 +38,13 @@ export default function Plan90() {
   };
 
   const deletePlan = async () => {
-    await fetch('/api/plan90', { method: 'DELETE' });
     setPlan90(null);
     setIsDeleting(false);
+    try {
+      await fetch('/api/plan90', { method: 'DELETE' });
+    } catch (e) {
+      console.error("Failed to sync plan deletion", e);
+    }
   };
 
   if (!plan90) {

@@ -21,12 +21,17 @@ export default function SettingsPage() {
 
   const handleSaveUser = async () => {
     setIsSaving(true);
-    const updated = await fetch('/api/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, role, goal })
-    }).then(r => r.json());
-    setUser(updated);
+    const updatedUser = { ...user, name, role, goal } as User;
+    setUser(updatedUser);
+    try {
+      await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, role, goal })
+      });
+    } catch (e) {
+      console.error("Failed to sync user settings", e);
+    }
     setIsSaving(false);
   };
 
@@ -46,11 +51,13 @@ export default function SettingsPage() {
   };
 
   const exportData = async () => {
+    const state = useMassarStore.getState();
     const data = {
-      user: await fetch('/api/user').then(r => r.json()),
-      tasks: await fetch('/api/tasks').then(r => r.json()),
-      plan90: await fetch('/api/plan90').then(r => r.json()),
-      schedule: await fetch('/api/schedule').then(r => r.json()),
+      user: state.user,
+      tasks: state.tasks,
+      plan90: state.plan90,
+      schedule: state.schedule,
+      messages: state.messages,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -62,8 +69,12 @@ export default function SettingsPage() {
 
   const resetAll = async () => {
     if (confirm("هل أنت متأكد من حذف جميع بياناتك؟ لا يمكن التراجع عن هذا الإجراء.")) {
-      await fetch('/api/danger-zone/reset', { method: 'POST' });
       localStorage.clear();
+      try {
+        await fetch('/api/danger-zone/reset', { method: 'POST' });
+      } catch (e) {
+        console.error("Failed to sync reset", e);
+      }
       window.location.href = '/onboarding';
     }
   };

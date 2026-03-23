@@ -35,23 +35,37 @@ export default function Onboarding() {
   };
 
   const finish = async () => {
-    // Save to DB
-    const user = await fetch('/api/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, role, goal })
-    }).then(r => r.json());
+    try {
+      // Try to save to DB
+      const userRes = await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, role, goal })
+      });
+      
+      let user = { name, role, goal };
+      if (userRes.ok) {
+        user = await userRes.json();
+      }
 
-    await fetch('/api/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(schedule)
-    });
+      const scheduleRes = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schedule)
+      });
 
-    setUser(user);
-    setSchedule(schedule);
-    setGeminiKey(apiKey);
-    navigate('/today');
+      setUser(user as any);
+      setSchedule(schedule);
+      setGeminiKey(apiKey);
+      navigate('/today');
+    } catch (error) {
+      console.error("Failed to save to backend, saving locally:", error);
+      // Fallback to local state if backend is unavailable (e.g. static deployment)
+      setUser({ name, role, goal } as any);
+      setSchedule(schedule);
+      setGeminiKey(apiKey);
+      navigate('/today');
+    }
   };
 
   const addBlock = (dayKey: string) => {

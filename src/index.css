@@ -45,6 +45,10 @@
   }
 }
 
+.markdown-body .task-summary {
+  @apply mt-2 flex flex-wrap items-center gap-2 text-xs text-muted bg-surface2/50 p-2.5 rounded-xl border border-border/50;
+}
+
 /* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 6px;
