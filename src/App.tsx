@@ -29,9 +29,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col md:flex-row">
+    <div className="min-h-[100dvh] bg-bg flex flex-col md:flex-row">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-surface border-e border-border flex-col p-6 sticky top-0 h-screen">
+      <aside className="hidden md:flex w-64 bg-surface border-e border-border flex-col p-6 sticky top-0 h-[100dvh]">
         <div className="flex items-center gap-3 mb-10">
           <div className="w-10 h-10 bg-teal rounded-xl flex items-center justify-center text-bg font-bold text-xl">م</div>
           <h1 className="text-2xl font-bold tracking-tight">مسار</h1>
@@ -152,7 +152,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-bg flex items-center justify-center">
         <motion.div
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
           transition={{ repeat: Infinity, duration: 2 }}

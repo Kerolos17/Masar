@@ -147,7 +147,7 @@ export default function Chat() {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)]">
+    <div className="flex flex-col h-[calc(100dvh-140px)] md:h-[calc(100dvh-100px)]">
       {/* Messages */}
       <div 
         ref={scrollRef}

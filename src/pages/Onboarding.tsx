@@ -69,7 +69,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center p-4 md:p-6">
+    <div className="min-h-[100dvh] bg-bg flex items-center justify-center p-4 md:p-6">
       <div className="max-w-xl w-full bg-surface/30 md:bg-transparent p-6 md:p-0 rounded-[2.5rem] md:rounded-none">
         {/* Progress Indicator */}
         <div className="flex justify-between mb-10 md:mb-12 relative px-2">

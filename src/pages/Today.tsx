@@ -196,7 +196,7 @@ export default function Today() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-surface border border-border rounded-3xl p-6 md:p-8 z-[70] shadow-2xl"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[90dvh] overflow-y-auto bg-surface border border-border rounded-3xl p-6 md:p-8 z-[70] shadow-2xl no-scrollbar"
             >
               <AddTaskForm onClose={() => setIsModalOpen(false)} taskToEdit={editingTask} />
             </motion.div>
@@ -220,7 +220,7 @@ export default function Today() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-surface border border-border rounded-3xl p-6 md:p-8 z-[70] shadow-2xl"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[90dvh] overflow-y-auto bg-surface border border-border rounded-3xl p-6 md:p-8 z-[70] shadow-2xl no-scrollbar"
             >
               <div className="flex justify-between items-start mb-4">
                 <h3 className={cn("text-xl font-bold pe-4", viewingTask.done && "line-through text-muted")}>
